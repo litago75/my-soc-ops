@@ -1,6 +1,19 @@
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { useBingoGame } from './useBingoGame';
+
+// Mock localStorage
+const localStorageMock = (() => {
+  let store: Record<string, string> = {};
+  return {
+    getItem: (key: string) => store[key] ?? null,
+    setItem: (key: string, value: string) => { store[key] = value; },
+    removeItem: (key: string) => { delete store[key]; },
+    clear: () => { store = {}; },
+  };
+})();
+
+Object.defineProperty(globalThis, 'localStorage', { value: localStorageMock });
 
 async function markSquares(
   clickSquare: (id: number) => void,
@@ -14,8 +27,12 @@ async function markSquares(
 
 describe('useBingoGame modifiers', () => {
   beforeEach(() => {
-    localStorage.clear();
+    localStorageMock.clear();
     vi.useRealTimers();
+    vi.restoreAllMocks();
+  });
+
+  afterEach(() => {
     vi.restoreAllMocks();
   });
 
@@ -91,5 +108,26 @@ describe('useBingoGame modifiers', () => {
 
     await markSquares(result.current.handleSquareClick, [1, 2, 3, 4]);
     expect(result.current.score).toBe(125);
+  });
+
+  it('re-triggers celebration for a new completed line', async () => {
+    const { result } = renderHook(() => useBingoGame());
+
+    act(() => {
+      result.current.startGame('none');
+    });
+
+    await markSquares(result.current.handleSquareClick, [0, 1, 2, 3, 4]);
+    expect(result.current.showBingoModal).toBe(true);
+
+    act(() => {
+      result.current.dismissModal();
+    });
+    expect(result.current.showBingoModal).toBe(false);
+
+    await markSquares(result.current.handleSquareClick, [20, 21, 22, 23, 24]);
+    expect(result.current.showBingoModal).toBe(true);
+    expect(result.current.winningLine?.type).toBe('row');
+    expect(result.current.winningLine?.index).toBe(4);
   });
 });

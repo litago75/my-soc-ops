@@ -3,6 +3,7 @@ import {
   generateBoard,
   toggleSquare,
   checkBingo,
+  checkAllBingos,
   getWinningSquareIds,
   type BingoSquareData,
 } from './bingoLogic';
@@ -405,6 +406,54 @@ describe('bingoLogic', () => {
       expect(line).not.toBeNull();
       const ids = getWinningSquareIds(line);
       expect(ids).toEqual(new Set(lastRowIds));
+    });
+  });
+
+  describe('checkAllBingos', () => {
+    it('should return empty array when no lines are complete', () => {
+      const board = generateBoard();
+      expect(checkAllBingos(board)).toEqual([]);
+    });
+
+    it('should return one line when only one line is complete', () => {
+      const board = generateBoard();
+      [0, 1, 2, 3, 4].forEach((i) => { board[i].isMarked = true; });
+      const result = checkAllBingos(board);
+      expect(result).toHaveLength(1);
+      expect(result[0].type).toBe('row');
+      expect(result[0].index).toBe(0);
+    });
+
+    it('should return multiple lines when more than one line is complete', () => {
+      const board = generateBoard();
+      // Complete row 0 (indices 0-4) and column 0 (indices 0, 5, 10, 15, 20)
+      [0, 1, 2, 3, 4, 5, 10, 15, 20].forEach((i) => { board[i].isMarked = true; });
+      const result = checkAllBingos(board);
+      expect(result.length).toBeGreaterThanOrEqual(2);
+      const row = result.find((l) => l.type === 'row' && l.index === 0);
+      const col = result.find((l) => l.type === 'column' && l.index === 0);
+      expect(row).toBeDefined();
+      expect(col).toBeDefined();
+    });
+
+    it('should detect a second new line after the first', () => {
+      const board = generateBoard();
+      // Complete row 0
+      [0, 1, 2, 3, 4].forEach((i) => { board[i].isMarked = true; });
+      expect(checkAllBingos(board)).toHaveLength(1);
+      // Now complete row 4 as well
+      [20, 21, 22, 23, 24].forEach((i) => { board[i].isMarked = true; });
+      expect(checkAllBingos(board)).toHaveLength(2);
+    });
+
+    it('should return correct line types for each completed line', () => {
+      const board = generateBoard();
+      // Complete diagonal (top-left to bottom-right): 0, 6, 12, 18, 24
+      [0, 6, 12, 18, 24].forEach((i) => { board[i].isMarked = true; });
+      const result = checkAllBingos(board);
+      expect(result.length).toBeGreaterThanOrEqual(1);
+      const diag = result.find((l) => l.type === 'diagonal' && l.index === 0);
+      expect(diag).toBeDefined();
     });
   });
 });

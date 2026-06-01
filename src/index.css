@@ -1,11 +1,30 @@
+@import url('https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;700;800&family=Nunito:wght@500;700;800&display=swap');
 @import 'tailwindcss';
 
 @theme {
-  --color-accent: #2563eb;
-  --color-accent-light: #3b82f6;
-  --color-marked: #dcfce7;
-  --color-marked-border: #22c55e;
-  --color-bingo: #fbbf24;
+  --font-display: 'Baloo 2', cursive;
+  --font-body: 'Nunito', sans-serif;
+  --color-candy-pink: #ff4ea3;
+  --color-candy-pink-dark: #db2f83;
+  --color-candy-yellow: #ffd648;
+  --color-candy-mint: #5de4c7;
+  --color-candy-violet: #8064ff;
+  --color-candy-sky: #9ed5ff;
+  --color-candy-cream: #fff8e8;
+  --color-candy-ink: #3f2c5d;
+  --letter-spacing-candy: 0.22em;
+  --shadow-title-pop: 0 3px 0 #fff;
+  --shadow-candy-card: 0 12px 35px -16px #ff4ea3;
+  --shadow-candy-button: 0 12px 24px -14px #ff4ea3;
+  --shadow-candy-header: 0 12px 32px -18px #8064ff;
+  --shadow-candy-indicator: 0 10px 24px -18px #5de4c7;
+  --shadow-candy-board: 0 24px 45px -28px #ff4ea3;
+  --shadow-candy-modal: 0 30px 60px -28px #8064ff;
+  --color-accent: #ff4ea3;
+  --color-accent-light: #ff6cb4;
+  --color-marked: #ffdd80;
+  --color-marked-border: #ffae00;
+  --color-bingo: #5de4c7;
 }
 
 html,
@@ -16,6 +35,13 @@ body,
 
 body {
   margin: 0;
-  font-family: system-ui, -apple-system, sans-serif;
+  font-family: var(--font-body);
   -webkit-tap-highlight-color: transparent;
+  color: var(--color-candy-ink);
+  background:
+    radial-gradient(circle at 20% 20%, color-mix(in oklab, var(--color-candy-yellow) 42%, transparent), transparent 45%),
+    radial-gradient(circle at 80% 25%, color-mix(in oklab, var(--color-candy-mint) 32%, transparent), transparent 48%),
+    radial-gradient(circle at 15% 80%, color-mix(in oklab, var(--color-candy-sky) 42%, transparent), transparent 50%),
+    linear-gradient(145deg, #fff3fa 0%, #fffdf3 45%, #eefaff 100%);
+  background-attachment: fixed;
 }
