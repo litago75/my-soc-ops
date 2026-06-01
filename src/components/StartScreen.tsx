@@ -4,14 +4,14 @@ interface StartScreenProps {
 
 export function StartScreen({ onStart }: StartScreenProps) {
   return (
-    <div className="flex flex-col items-center justify-center min-h-full p-6 bg-gray-50">
+    <div className="flex flex-col items-center justify-center min-h-full p-6">
       <div className="text-center max-w-sm">
-        <h1 className="text-4xl font-bold text-gray-900 mb-2">Bingo Mixer</h1>
-        <p className="text-lg text-gray-600 mb-8">Find your people!</p>
+        <h1 className="sticker-title text-5xl font-black text-[#8a2e29] mb-2 tracking-wide">Bingo Mixer</h1>
+        <p className="text-lg text-[#6f4638] mb-8">Find your people!</p>
         
-        <div className="bg-white rounded-lg p-6 shadow-sm border border-gray-200 mb-8">
-          <h2 className="font-semibold text-gray-800 mb-3">How to play</h2>
-          <ul className="text-left text-gray-600 text-sm space-y-2">
+        <div className="sticker-card p-6 mb-8">
+          <h2 className="font-semibold text-[#6d3a2d] mb-3 text-lg">How to play</h2>
+          <ul className="text-left text-[#7d5545] text-sm space-y-2">
             <li>• Find people who match the questions</li>
             <li>• Tap a square when you find a match</li>
             <li>• Get 5 in a row to win!</li>
@@ -20,7 +20,7 @@ export function StartScreen({ onStart }: StartScreenProps) {
 
         <button
           onClick={onStart}
-          className="w-full bg-accent text-white font-semibold py-4 px-8 rounded-lg text-lg active:bg-accent-light transition-colors"
+          className="sticker-button w-full bg-accent text-white font-bold py-4 px-8 rounded-2xl text-lg transition-all"
         >
           Start Game
         </button>

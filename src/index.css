@@ -1,11 +1,11 @@
 @import 'tailwindcss';
 
 @theme {
-  --color-accent: #2563eb;
-  --color-accent-light: #3b82f6;
-  --color-marked: #dcfce7;
-  --color-marked-border: #22c55e;
-  --color-bingo: #fbbf24;
+  --color-accent: #ef5a4a;
+  --color-accent-light: #f27163;
+  --color-marked: #ffe9ac;
+  --color-marked-border: #ff9c32;
+  --color-bingo: #ffca48;
 }
 
 html,
@@ -16,6 +16,66 @@ body,
 
 body {
   margin: 0;
-  font-family: system-ui, -apple-system, sans-serif;
+  font-family: 'Marker Felt', 'Chalkboard SE', 'Comic Sans MS', 'Trebuchet MS', sans-serif;
   -webkit-tap-highlight-color: transparent;
+  background:
+    radial-gradient(circle at 12% 12%, #fff4ba 0%, rgba(255, 244, 186, 0) 40%),
+    radial-gradient(circle at 84% 20%, #ffd6cf 0%, rgba(255, 214, 207, 0) 45%),
+    linear-gradient(135deg, #fcefc8 0%, #f8d9c5 45%, #efc9e1 100%);
+  color: #4f2b2b;
+}
+
+:root {
+  --sticker-shadow: 0 10px 0 #d59473, 0 12px 22px rgba(92, 42, 22, 0.25);
+  --sticker-pressed-shadow: 0 3px 0 #d59473, 0 6px 10px rgba(92, 42, 22, 0.25);
+}
+
+.sticker-card {
+  border-radius: 1.5rem;
+  background:
+    linear-gradient(155deg, rgba(255, 255, 255, 0.92), rgba(255, 247, 232, 0.82));
+  border: 3px solid #ffb88b;
+  box-shadow: var(--sticker-shadow);
+}
+
+.sticker-title {
+  text-shadow: 0 2px 0 rgba(255, 255, 255, 0.8), 0 4px 8px rgba(113, 48, 38, 0.16);
+}
+
+.sticker-button {
+  border: 2px solid #d95f53;
+  box-shadow: 0 8px 0 #bf463a, 0 12px 20px rgba(139, 46, 35, 0.28);
+}
+
+.sticker-button:active {
+  transform: translateY(5px);
+  box-shadow: 0 3px 0 #bf463a, 0 6px 10px rgba(139, 46, 35, 0.28);
+}
+
+.sticker-grid {
+  transform: rotate(-1.2deg);
+}
+
+.sticker-square {
+  border-radius: 0.9rem;
+  border: 2px solid #d8a77f;
+  background: linear-gradient(150deg, #fffef8, #ffeccf);
+  box-shadow: 0 5px 0 #d8a77f, 0 8px 12px rgba(94, 58, 32, 0.18);
+}
+
+.sticker-square:active {
+  transform: translateY(2px) rotate(0.4deg);
+  box-shadow: 0 2px 0 #d8a77f, 0 4px 8px rgba(94, 58, 32, 0.18);
+}
+
+.sticker-square-marked {
+  border-color: #eb8c2f;
+  background: linear-gradient(160deg, #fff3b5, #ffd179);
+  box-shadow: 0 5px 0 #eb8c2f, 0 8px 12px rgba(133, 72, 18, 0.2);
+}
+
+.sticker-square-winning {
+  border-color: #ff6f4e;
+  background: linear-gradient(165deg, #ffd2ad, #ffa771);
+  box-shadow: 0 5px 0 #ff6f4e, 0 8px 12px rgba(151, 56, 36, 0.22);
 }
