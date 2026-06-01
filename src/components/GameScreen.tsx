@@ -38,7 +38,7 @@ export function GameScreen({
 
       {/* Instructions */}
       <p className="text-center text-gray-500 text-sm py-2 px-4">
-        Tap a square when you find someone who matches it. Get {boardSize} in a row.
+        Tap a square when you find someone who matches it. Get {boardSize} in a line.
       </p>
 
       {/* Bingo indicator */}
