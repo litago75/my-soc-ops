@@ -1,9 +1,9 @@
-import { useState, useCallback, useMemo, useEffect } from 'react';
+import { useState, useCallback, useMemo, useEffect, useRef } from 'react';
 import type { BingoSquareData, BingoLine, GameState } from '../types';
 import {
   generateBoard,
   toggleSquare,
-  checkBingo,
+  checkAllBingos,
   getWinningSquareIds,
 } from '../utils/bingoLogic';
 
@@ -137,6 +137,10 @@ function saveGameState(gameState: GameState, board: BingoSquareData[], winningLi
   }
 }
 
+function lineKey(line: BingoLine): string {
+  return `${line.type}-${line.index}`;
+}
+
 export function useBingoGame(): BingoGameState & BingoGameActions {
   const loadedState = useMemo(() => loadGameState(), []);
 
@@ -151,6 +155,15 @@ export function useBingoGame(): BingoGameState & BingoGameActions {
   );
   const [showBingoModal, setShowBingoModal] = useState(false);
 
+  // Track which winning lines have already triggered a win event.
+  // Pre-populate from any lines already completed on the loaded board so that
+  // resuming a saved game does not re-trigger wins the user has already seen.
+  const seenLineKeys = useRef<Set<string>>(
+    new Set(
+      checkAllBingos(loadedState?.board ?? []).map(lineKey)
+    )
+  );
+
   const winningSquareIds = useMemo(
     () => getWinningSquareIds(winningLine),
     [winningLine]
@@ -162,6 +175,7 @@ export function useBingoGame(): BingoGameState & BingoGameActions {
   }, [gameState, board, winningLine]);
 
   const startGame = useCallback(() => {
+    seenLineKeys.current = new Set();
     setBoard(generateBoard());
     setWinningLine(null);
     setGameState('playing');
@@ -171,12 +185,17 @@ export function useBingoGame(): BingoGameState & BingoGameActions {
     setBoard((currentBoard) => {
       const newBoard = toggleSquare(currentBoard, squareId);
       
-      // Check for bingo after toggling
-      const bingo = checkBingo(newBoard);
-      if (bingo && !winningLine) {
+      // Find any newly completed lines not previously reported as wins
+      const newLines = checkAllBingos(newBoard).filter(
+        (line) => !seenLineKeys.current.has(lineKey(line))
+      );
+
+      if (newLines.length > 0) {
+        // Mark all new lines as seen before scheduling state updates
+        newLines.forEach((line) => seenLineKeys.current.add(lineKey(line)));
         // Schedule state updates to avoid synchronous setState in effect
         queueMicrotask(() => {
-          setWinningLine(bingo);
+          setWinningLine(newLines[0]);
           setGameState('bingo');
           setShowBingoModal(true);
         });
@@ -184,9 +203,10 @@ export function useBingoGame(): BingoGameState & BingoGameActions {
       
       return newBoard;
     });
-  }, [winningLine]);
+  }, []);
 
   const resetGame = useCallback(() => {
+    seenLineKeys.current = new Set();
     setGameState('start');
     setBoard([]);
     setWinningLine(null);
