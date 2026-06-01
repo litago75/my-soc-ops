@@ -9,8 +9,13 @@ function App() {
     board,
     winningSquareIds,
     showBingoModal,
+    score,
+    activeModifierLabel,
+    wildcardArmed,
+    canUseWildcard,
     startGame,
     handleSquareClick,
+    activateWildcard,
     resetGame,
     dismissModal,
   } = useBingoGame();
@@ -25,7 +30,12 @@ function App() {
         board={board}
         winningSquareIds={winningSquareIds}
         hasBingo={gameState === 'bingo'}
+        score={score}
+        activeModifierLabel={activeModifierLabel}
+        wildcardArmed={wildcardArmed}
+        canUseWildcard={canUseWildcard}
         onSquareClick={handleSquareClick}
+        onUseWildcard={activateWildcard}
         onReset={resetGame}
       />
       {showBingoModal && (
