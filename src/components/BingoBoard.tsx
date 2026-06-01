@@ -2,14 +2,18 @@ import type { BingoSquareData } from '../types';
 import { BingoSquare } from './BingoSquare';
 
 interface BingoBoardProps {
+  boardSize: number;
   board: BingoSquareData[];
   winningSquareIds: Set<number>;
   onSquareClick: (squareId: number) => void;
 }
 
-export function BingoBoard({ board, winningSquareIds, onSquareClick }: BingoBoardProps) {
+export function BingoBoard({ boardSize, board, winningSquareIds, onSquareClick }: BingoBoardProps) {
   return (
-    <div className="grid grid-cols-5 gap-1 w-full max-w-md mx-auto aspect-square">
+    <div
+      className="grid gap-1 w-full max-w-md mx-auto aspect-square"
+      style={{ gridTemplateColumns: `repeat(${boardSize}, minmax(0, 1fr))` }}
+    >
       {board.map((square) => (
         <BingoSquare
           key={square.id}
