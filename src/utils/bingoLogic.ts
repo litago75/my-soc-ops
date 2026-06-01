@@ -1,11 +1,14 @@
 import { questions, FREE_SPACE } from '../data/questions';
-import type { BingoSquareData, BingoLine } from '../types';
+import type { BingoSquareData, BingoLine, GameMode } from '../types';
 
 // Re-export types for convenience
 export type { BingoSquareData, BingoLine } from '../types';
 
-const BOARD_SIZE = 5;
-const CENTER_INDEX = 12; // 5x5 grid, center is index 12 (row 2, col 2)
+export const MODE_CONFIG: Record<GameMode, { boardSize: number }> = {
+  quick: { boardSize: 3 },
+  classic: { boardSize: 5 },
+  chaos: { boardSize: 5 },
+};
 
 /**
  * Shuffle an array using Fisher-Yates algorithm
@@ -20,15 +23,20 @@ function shuffleArray<T>(array: T[]): T[] {
 }
 
 /**
- * Generate a new 5x5 bingo board
+ * Generate a new bingo board for a mode
  */
-export function generateBoard(): BingoSquareData[] {
-  const shuffledQuestions = shuffleArray(questions).slice(0, 24);
+export function generateBoard(mode: GameMode = 'classic'): BingoSquareData[] {
+  const boardSize = MODE_CONFIG[mode].boardSize;
+  const totalSquares = boardSize * boardSize;
+  const centerIndex = Math.floor(totalSquares / 2);
+  const hasFreeSpace = boardSize % 2 === 1;
+  const questionCount = hasFreeSpace ? totalSquares - 1 : totalSquares;
+  const shuffledQuestions = shuffleArray(questions).slice(0, questionCount);
   const board: BingoSquareData[] = [];
 
   let questionIndex = 0;
-  for (let i = 0; i < 25; i++) {
-    if (i === CENTER_INDEX) {
+  for (let i = 0; i < totalSquares; i++) {
+    if (hasFreeSpace && i === centerIndex) {
       board.push({
         id: i,
         text: FREE_SPACE,
@@ -63,39 +71,47 @@ export function toggleSquare(board: BingoSquareData[], squareId: number): BingoS
 /**
  * Get all possible winning lines
  */
-function getWinningLines(): BingoLine[] {
+function getWinningLines(boardSize: number): BingoLine[] {
   const lines: BingoLine[] = [];
 
   // Rows
-  for (let row = 0; row < BOARD_SIZE; row++) {
+  for (let row = 0; row < boardSize; row++) {
     const squares = [];
-    for (let col = 0; col < BOARD_SIZE; col++) {
-      squares.push(row * BOARD_SIZE + col);
+    for (let col = 0; col < boardSize; col++) {
+      squares.push(row * boardSize + col);
     }
     lines.push({ type: 'row', index: row, squares });
   }
 
   // Columns
-  for (let col = 0; col < BOARD_SIZE; col++) {
+  for (let col = 0; col < boardSize; col++) {
     const squares = [];
-    for (let row = 0; row < BOARD_SIZE; row++) {
-      squares.push(row * BOARD_SIZE + col);
+    for (let row = 0; row < boardSize; row++) {
+      squares.push(row * boardSize + col);
     }
     lines.push({ type: 'column', index: col, squares });
   }
 
   // Diagonal (top-left to bottom-right)
+  const leftToRight: number[] = [];
+  for (let i = 0; i < boardSize; i++) {
+    leftToRight.push(i * boardSize + i);
+  }
   lines.push({
     type: 'diagonal',
     index: 0,
-    squares: [0, 6, 12, 18, 24],
+    squares: leftToRight,
   });
 
   // Diagonal (top-right to bottom-left)
+  const rightToLeft: number[] = [];
+  for (let i = 0; i < boardSize; i++) {
+    rightToLeft.push(i * boardSize + (boardSize - 1 - i));
+  }
   lines.push({
     type: 'diagonal',
     index: 1,
-    squares: [4, 8, 12, 16, 20],
+    squares: rightToLeft,
   });
 
   return lines;
@@ -105,7 +121,12 @@ function getWinningLines(): BingoLine[] {
  * Check if there's a bingo and return the winning line(s)
  */
 export function checkBingo(board: BingoSquareData[]): BingoLine | null {
-  const lines = getWinningLines();
+  const boardSize = Math.sqrt(board.length);
+  if (!Number.isInteger(boardSize) || boardSize < 3) {
+    return null;
+  }
+
+  const lines = getWinningLines(boardSize);
 
   for (const line of lines) {
     const isComplete = line.squares.every((idx) => board[idx].isMarked);
@@ -123,4 +144,17 @@ export function checkBingo(board: BingoSquareData[]): BingoLine | null {
 export function getWinningSquareIds(line: BingoLine | null): Set<number> {
   if (!line) return new Set();
   return new Set(line.squares);
+}
+
+/**
+ * Apply one random chaos modifier (toggle a random non-free square)
+ */
+export function applyChaosModifier(board: BingoSquareData[]): BingoSquareData[] {
+  const candidates = board.filter((square) => !square.isFreeSpace);
+  if (candidates.length === 0) {
+    return board;
+  }
+
+  const randomSquare = candidates[Math.floor(Math.random() * candidates.length)];
+  return toggleSquare(board, randomSquare.id);
 }

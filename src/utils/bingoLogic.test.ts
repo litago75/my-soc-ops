@@ -1,6 +1,7 @@
-import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import {
   generateBoard,
+  applyChaosModifier,
   toggleSquare,
   checkBingo,
   getWinningSquareIds,
@@ -9,6 +10,10 @@ import {
 import { questions, FREE_SPACE } from '../data/questions';
 
 describe('bingoLogic', () => {
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
   describe('generateBoard', () => {
     it('should generate a board with 25 squares', () => {
       const board = generateBoard();
@@ -84,6 +89,20 @@ describe('bingoLogic', () => {
       // At least verify structure is correct
       expect(texts1).toHaveLength(24);
       expect(texts2).toHaveLength(24);
+    });
+
+    it('should generate a 3x3 board in quick mode', () => {
+      const board = generateBoard('quick');
+      expect(board).toHaveLength(9);
+      expect(board[4].isFreeSpace).toBe(true);
+      expect(board[4].isMarked).toBe(true);
+    });
+
+    it('should generate a 5x5 board in chaos mode', () => {
+      const board = generateBoard('chaos');
+      expect(board).toHaveLength(25);
+      expect(board[12].isFreeSpace).toBe(true);
+      expect(board[12].isMarked).toBe(true);
     });
   });
 
@@ -310,6 +329,46 @@ describe('bingoLogic', () => {
         board[i].isMarked = true;
       });
       expect(checkBingo(board)).toBeNull();
+    });
+
+    it('should detect row bingo on quick mode board', () => {
+      const board = generateBoard('quick');
+      [0, 1, 2].forEach((i) => {
+        board[i].isMarked = true;
+      });
+      const result = checkBingo(board);
+      expect(result?.type).toBe('row');
+      expect(result?.index).toBe(0);
+      expect(result?.squares).toEqual([0, 1, 2]);
+    });
+
+    it('should detect diagonal bingo on quick mode board', () => {
+      const board = generateBoard('quick');
+      [0, 4, 8].forEach((i) => {
+        board[i].isMarked = true;
+      });
+      const result = checkBingo(board);
+      expect(result?.type).toBe('diagonal');
+      expect(result?.squares).toEqual([0, 4, 8]);
+    });
+  });
+
+  describe('applyChaosModifier', () => {
+    it('should toggle a random non-free square', () => {
+      vi.spyOn(Math, 'random').mockReturnValue(0);
+      const board = generateBoard('chaos');
+      const firstNonFreeSquareId = board.find((square) => !square.isFreeSpace)?.id;
+      const updated = applyChaosModifier(board);
+      expect(firstNonFreeSquareId).toBeDefined();
+      expect(updated[firstNonFreeSquareId!].isMarked).toBe(true);
+    });
+
+    it('should never toggle free space', () => {
+      vi.spyOn(Math, 'random').mockReturnValue(0.5);
+      const board = generateBoard('chaos');
+      const centerBefore = board[12].isMarked;
+      const updated = applyChaosModifier(board);
+      expect(updated[12].isMarked).toBe(centerBefore);
     });
   });
 

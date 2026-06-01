@@ -6,6 +6,8 @@ import { BingoModal } from './components/BingoModal';
 function App() {
   const {
     gameState,
+    gameMode,
+    boardSize,
     board,
     winningSquareIds,
     showBingoModal,
@@ -22,6 +24,8 @@ function App() {
   return (
     <>
       <GameScreen
+        gameMode={gameMode}
+        boardSize={boardSize}
         board={board}
         winningSquareIds={winningSquareIds}
         hasBingo={gameState === 'bingo'}

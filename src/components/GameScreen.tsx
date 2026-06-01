@@ -1,7 +1,9 @@
-import type { BingoSquareData } from '../types';
+import type { BingoSquareData, GameMode } from '../types';
 import { BingoBoard } from './BingoBoard';
 
 interface GameScreenProps {
+  gameMode: GameMode;
+  boardSize: number;
   board: BingoSquareData[];
   winningSquareIds: Set<number>;
   hasBingo: boolean;
@@ -10,12 +12,16 @@ interface GameScreenProps {
 }
 
 export function GameScreen({
+  gameMode,
+  boardSize,
   board,
   winningSquareIds,
   hasBingo,
   onSquareClick,
   onReset,
 }: GameScreenProps) {
+  const modeLabel = gameMode[0].toUpperCase() + gameMode.slice(1);
+
   return (
     <div className="flex flex-col min-h-full bg-gray-50">
       {/* Header */}
@@ -27,12 +33,12 @@ export function GameScreen({
           ← Back
         </button>
         <h1 className="font-bold text-gray-900">Bingo Mixer</h1>
-        <div className="w-16"></div>
+        <div className="w-16 text-right text-xs text-gray-500">{modeLabel}</div>
       </header>
 
       {/* Instructions */}
       <p className="text-center text-gray-500 text-sm py-2 px-4">
-        Tap a square when you find someone who matches it.
+        Tap a square when you find someone who matches it. Get {boardSize} in a row.
       </p>
 
       {/* Bingo indicator */}
@@ -45,6 +51,7 @@ export function GameScreen({
       {/* Board */}
       <div className="flex-1 flex items-center justify-center p-3">
         <BingoBoard
+          boardSize={boardSize}
           board={board}
           winningSquareIds={winningSquareIds}
           onSquareClick={onSquareClick}
