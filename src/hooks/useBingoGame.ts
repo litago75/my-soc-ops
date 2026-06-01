@@ -189,6 +189,13 @@ export function useBingoGame(): BingoGameState & BingoGameActions {
     saveGameState(gameState, board, winningLine);
   }, [gameState, board, winningLine]);
 
+  // Clear the combo timer on unmount to prevent state updates on an unmounted component
+  useEffect(() => {
+    return () => {
+      if (comboTimerRef.current) clearTimeout(comboTimerRef.current);
+    };
+  }, []);
+
   const startGame = useCallback(() => {
     seenLineKeys.current = new Set();
     lastMarkTimeRef.current = 0;
