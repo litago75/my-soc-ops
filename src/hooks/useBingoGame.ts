@@ -1,11 +1,12 @@
 import { useState, useCallback, useMemo, useEffect } from 'react';
-import type { BingoSquareData, BingoLine, GameState } from '../types';
+import type { BingoSquareData, BingoLine, GameState, CelebrationVariant } from '../types';
 import {
   generateBoard,
   toggleSquare,
   checkBingo,
   getWinningSquareIds,
 } from '../utils/bingoLogic';
+import { pickCelebrationVariant, CELEBRATION_VARIANTS } from '../utils/celebrationVariants';
 
 export interface BingoGameState {
   gameState: GameState;
@@ -13,6 +14,7 @@ export interface BingoGameState {
   winningLine: BingoLine | null;
   winningSquareIds: Set<number>;
   showBingoModal: boolean;
+  celebrationVariant: CelebrationVariant;
 }
 
 export interface BingoGameActions {
@@ -150,6 +152,9 @@ export function useBingoGame(): BingoGameState & BingoGameActions {
     () => loadedState?.winningLine || null
   );
   const [showBingoModal, setShowBingoModal] = useState(false);
+  const [celebrationVariant, setCelebrationVariant] = useState<CelebrationVariant>(
+    () => CELEBRATION_VARIANTS[0]
+  );
 
   const winningSquareIds = useMemo(
     () => getWinningSquareIds(winningLine),
@@ -178,6 +183,7 @@ export function useBingoGame(): BingoGameState & BingoGameActions {
         queueMicrotask(() => {
           setWinningLine(bingo);
           setGameState('bingo');
+          setCelebrationVariant(pickCelebrationVariant());
           setShowBingoModal(true);
         });
       }
@@ -203,6 +209,7 @@ export function useBingoGame(): BingoGameState & BingoGameActions {
     winningLine,
     winningSquareIds,
     showBingoModal,
+    celebrationVariant,
     startGame,
     handleSquareClick,
     resetGame,

@@ -1,15 +1,28 @@
+import type { CelebrationVariant } from '../types';
+import { CELEBRATION_VARIANTS } from '../utils/celebrationVariants';
+
 interface BingoModalProps {
   onDismiss: () => void;
+  variant?: CelebrationVariant;
 }
 
-export function BingoModal({ onDismiss }: BingoModalProps) {
+const DEFAULT_VARIANT = CELEBRATION_VARIANTS[0];
+
+export function BingoModal({ onDismiss, variant = DEFAULT_VARIANT }: BingoModalProps) {
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
-      <div className="bg-white rounded-xl p-6 max-w-xs w-full text-center shadow-xl animate-[bounce_0.5s_ease-out]">
-        <div className="text-5xl mb-4">🎉</div>
-        <h2 className="text-3xl font-bold text-amber-500 mb-2">BINGO!</h2>
-        <p className="text-gray-600 mb-6">You completed a line!</p>
-        
+    <div
+      className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="bingo-heading"
+    >
+      <div className={`bg-white rounded-xl p-6 max-w-xs w-full text-center shadow-xl ${variant.animationClass}`}>
+        <div className="text-5xl mb-4" aria-hidden="true">{variant.emoji}</div>
+        <h2 id="bingo-heading" className={`text-3xl font-bold mb-2 ${variant.headingColorClass}`}>
+          {variant.heading}
+        </h2>
+        <p className="text-gray-600 mb-6">{variant.message}</p>
+
         <button
           onClick={onDismiss}
           className="w-full bg-accent text-white font-semibold py-3 px-6 rounded-lg active:bg-accent-light transition-colors"
@@ -20,3 +33,4 @@ export function BingoModal({ onDismiss }: BingoModalProps) {
     </div>
   );
 }
+

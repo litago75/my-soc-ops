@@ -9,6 +9,7 @@ function App() {
     board,
     winningSquareIds,
     showBingoModal,
+    celebrationVariant,
     startGame,
     handleSquareClick,
     resetGame,
@@ -29,7 +30,7 @@ function App() {
         onReset={resetGame}
       />
       {showBingoModal && (
-        <BingoModal onDismiss={dismissModal} />
+        <BingoModal onDismiss={dismissModal} variant={celebrationVariant} />
       )}
     </>
   );

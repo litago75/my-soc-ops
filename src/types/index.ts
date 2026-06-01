@@ -14,3 +14,12 @@ export interface BingoLine {
 }
 
 export type GameState = 'start' | 'playing' | 'bingo';
+
+export interface CelebrationVariant {
+  id: string;
+  emoji: string;
+  heading: string;
+  message: string;
+  animationClass: string;
+  headingColorClass: string;
+}
