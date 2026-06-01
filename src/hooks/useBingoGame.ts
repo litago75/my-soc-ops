@@ -1,5 +1,12 @@
 import { useState, useCallback, useMemo, useEffect } from 'react';
-import type { BingoSquareData, BingoLine, GameState } from '../types';
+import type {
+  BingoSquareData,
+  BingoLine,
+  GameState,
+  SocialMode,
+  TeamName,
+  TeamScores,
+} from '../types';
 import {
   generateBoard,
   toggleSquare,
@@ -13,23 +20,35 @@ export interface BingoGameState {
   winningLine: BingoLine | null;
   winningSquareIds: Set<number>;
   showBingoModal: boolean;
+  socialMode: SocialMode;
+  timeRemaining: number | null;
+  teamScores: TeamScores;
+  activeTeam: TeamName;
+  teamWinner: TeamName | null;
 }
 
 export interface BingoGameActions {
-  startGame: () => void;
+  startGame: (socialMode: SocialMode) => void;
   handleSquareClick: (squareId: number) => void;
   resetGame: () => void;
   dismissModal: () => void;
 }
 
 const STORAGE_KEY = 'bingo-game-state';
-const STORAGE_VERSION = 1;
+const STORAGE_VERSION = 2;
+const COUNTDOWN_DURATION_SECONDS = 120;
+const EMPTY_TEAM_SCORES: TeamScores = { spark: 0, pop: 0 };
 
 interface StoredGameData {
   version: number;
   gameState: GameState;
   board: BingoSquareData[];
   winningLine: BingoLine | null;
+  socialMode: SocialMode;
+  timeRemaining: number | null;
+  teamScores: TeamScores;
+  activeTeam: TeamName;
+  teamWinner: TeamName | null;
 }
 
 function validateStoredData(data: unknown): data is StoredGameData {
@@ -43,7 +62,7 @@ function validateStoredData(data: unknown): data is StoredGameData {
     return false;
   }
   
-  if (typeof obj.gameState !== 'string' || !['start', 'playing', 'bingo'].includes(obj.gameState)) {
+  if (typeof obj.gameState !== 'string' || !['start', 'playing', 'bingo', 'timeout'].includes(obj.gameState)) {
     return false;
   }
   
@@ -80,11 +99,41 @@ function validateStoredData(data: unknown): data is StoredGameData {
       return false;
     }
   }
+
+  if (typeof obj.socialMode !== 'string' || !['classic', 'countdown', 'team'].includes(obj.socialMode)) {
+    return false;
+  }
+
+  if (obj.timeRemaining !== null && (typeof obj.timeRemaining !== 'number' || obj.timeRemaining < 0)) {
+    return false;
+  }
+
+  if (!obj.teamScores || typeof obj.teamScores !== 'object') {
+    return false;
+  }
+  const scores = obj.teamScores as Record<string, unknown>;
+  if (
+    typeof scores.spark !== 'number' ||
+    typeof scores.pop !== 'number'
+  ) {
+    return false;
+  }
+
+  if (typeof obj.activeTeam !== 'string' || !['spark', 'pop'].includes(obj.activeTeam)) {
+    return false;
+  }
+
+  if (obj.teamWinner !== null && (typeof obj.teamWinner !== 'string' || !['spark', 'pop'].includes(obj.teamWinner))) {
+    return false;
+  }
   
   return true;
 }
 
-function loadGameState(): Pick<BingoGameState, 'gameState' | 'board' | 'winningLine'> | null {
+function loadGameState(): Pick<
+  BingoGameState,
+  'gameState' | 'board' | 'winningLine' | 'socialMode' | 'timeRemaining' | 'teamScores' | 'activeTeam' | 'teamWinner'
+> | null {
   // SSR guard
   if (typeof window === 'undefined') {
     return null;
@@ -103,6 +152,11 @@ function loadGameState(): Pick<BingoGameState, 'gameState' | 'board' | 'winningL
         gameState: parsed.gameState,
         board: parsed.board,
         winningLine: parsed.winningLine,
+        socialMode: parsed.socialMode,
+        timeRemaining: parsed.timeRemaining,
+        teamScores: parsed.teamScores,
+        activeTeam: parsed.activeTeam,
+        teamWinner: parsed.teamWinner,
       };
     } else {
       console.warn('Invalid game state data in localStorage, clearing...');
@@ -118,7 +172,16 @@ function loadGameState(): Pick<BingoGameState, 'gameState' | 'board' | 'winningL
   return null;
 }
 
-function saveGameState(gameState: GameState, board: BingoSquareData[], winningLine: BingoLine | null): void {
+function saveGameState(
+  gameState: GameState,
+  board: BingoSquareData[],
+  winningLine: BingoLine | null,
+  socialMode: SocialMode,
+  timeRemaining: number | null,
+  teamScores: TeamScores,
+  activeTeam: TeamName,
+  teamWinner: TeamName | null
+): void {
   // SSR guard
   if (typeof window === 'undefined') {
     return;
@@ -130,6 +193,11 @@ function saveGameState(gameState: GameState, board: BingoSquareData[], winningLi
       gameState,
       board,
       winningLine,
+      socialMode,
+      timeRemaining,
+      teamScores,
+      activeTeam,
+      teamWinner,
     };
     localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
   } catch (error) {
@@ -150,6 +218,21 @@ export function useBingoGame(): BingoGameState & BingoGameActions {
     () => loadedState?.winningLine || null
   );
   const [showBingoModal, setShowBingoModal] = useState(false);
+  const [socialMode, setSocialMode] = useState<SocialMode>(
+    () => loadedState?.socialMode || 'classic'
+  );
+  const [timeRemaining, setTimeRemaining] = useState<number | null>(
+    () => loadedState?.timeRemaining ?? null
+  );
+  const [teamScores, setTeamScores] = useState<TeamScores>(
+    () => loadedState?.teamScores || EMPTY_TEAM_SCORES
+  );
+  const [activeTeam, setActiveTeam] = useState<TeamName>(
+    () => loadedState?.activeTeam || 'spark'
+  );
+  const [teamWinner, setTeamWinner] = useState<TeamName | null>(
+    () => loadedState?.teamWinner || null
+  );
 
   const winningSquareIds = useMemo(
     () => getWinningSquareIds(winningLine),
@@ -158,24 +241,81 @@ export function useBingoGame(): BingoGameState & BingoGameActions {
 
   // Save game state to localStorage whenever it changes
   useEffect(() => {
-    saveGameState(gameState, board, winningLine);
-  }, [gameState, board, winningLine]);
+    saveGameState(gameState, board, winningLine, socialMode, timeRemaining, teamScores, activeTeam, teamWinner);
+  }, [gameState, board, winningLine, socialMode, timeRemaining, teamScores, activeTeam, teamWinner]);
 
-  const startGame = useCallback(() => {
+  useEffect(() => {
+    if (socialMode !== 'countdown' || gameState !== 'playing' || timeRemaining === null) {
+      return;
+    }
+
+    const interval = window.setInterval(() => {
+      setTimeRemaining((current) => {
+        if (current === null) {
+          return null;
+        }
+        if (current <= 1) {
+          window.clearInterval(interval);
+          setGameState((state) => (state === 'playing' ? 'timeout' : state));
+          return 0;
+        }
+        return current - 1;
+      });
+    }, 1000);
+
+    return () => window.clearInterval(interval);
+  }, [gameState, socialMode, timeRemaining]);
+
+  const startGame = useCallback((selectedSocialMode: SocialMode) => {
     setBoard(generateBoard());
     setWinningLine(null);
+    setSocialMode(selectedSocialMode);
+    setTimeRemaining(selectedSocialMode === 'countdown' ? COUNTDOWN_DURATION_SECONDS : null);
+    setTeamScores(EMPTY_TEAM_SCORES);
+    setActiveTeam('spark');
+    setTeamWinner(null);
+    setShowBingoModal(false);
     setGameState('playing');
   }, []);
 
   const handleSquareClick = useCallback((squareId: number) => {
+    if (gameState === 'timeout') {
+      return;
+    }
+
+    const turnTeam = activeTeam;
+
     setBoard((currentBoard) => {
       const newBoard = toggleSquare(currentBoard, squareId);
+      const previousSquare = currentBoard[squareId];
+      const nextSquare = newBoard[squareId];
+
+      if (
+        socialMode === 'team' &&
+        previousSquare &&
+        nextSquare &&
+        !previousSquare.isMarked &&
+        nextSquare.isMarked
+      ) {
+        setTeamScores((currentScores) => ({
+          ...currentScores,
+          [turnTeam]: currentScores[turnTeam] + 1,
+        }));
+        setActiveTeam(turnTeam === 'spark' ? 'pop' : 'spark');
+      }
       
       // Check for bingo after toggling
       const bingo = checkBingo(newBoard);
       if (bingo && !winningLine) {
         // Schedule state updates to avoid synchronous setState in effect
         queueMicrotask(() => {
+          if (socialMode === 'team') {
+            setTeamScores((currentScores) => ({
+              ...currentScores,
+              [turnTeam]: currentScores[turnTeam] + 3,
+            }));
+            setTeamWinner(turnTeam);
+          }
           setWinningLine(bingo);
           setGameState('bingo');
           setShowBingoModal(true);
@@ -184,13 +324,18 @@ export function useBingoGame(): BingoGameState & BingoGameActions {
       
       return newBoard;
     });
-  }, [winningLine]);
+  }, [activeTeam, gameState, socialMode, winningLine]);
 
   const resetGame = useCallback(() => {
     setGameState('start');
     setBoard([]);
     setWinningLine(null);
     setShowBingoModal(false);
+    setSocialMode('classic');
+    setTimeRemaining(null);
+    setTeamScores(EMPTY_TEAM_SCORES);
+    setActiveTeam('spark');
+    setTeamWinner(null);
   }, []);
 
   const dismissModal = useCallback(() => {
@@ -203,6 +348,11 @@ export function useBingoGame(): BingoGameState & BingoGameActions {
     winningLine,
     winningSquareIds,
     showBingoModal,
+    socialMode,
+    timeRemaining,
+    teamScores,
+    activeTeam,
+    teamWinner,
     startGame,
     handleSquareClick,
     resetGame,

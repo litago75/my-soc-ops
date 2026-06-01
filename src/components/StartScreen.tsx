@@ -1,8 +1,13 @@
+import { useState } from 'react';
+import type { SocialMode } from '../types';
+
 interface StartScreenProps {
-  onStart: () => void;
+  onStart: (socialMode: SocialMode) => void;
 }
 
 export function StartScreen({ onStart }: StartScreenProps) {
+  const [socialMode, setSocialMode] = useState<SocialMode>('classic');
+
   return (
     <div className="flex flex-col items-center justify-center min-h-full p-6 bg-gray-50">
       <div className="text-center max-w-sm">
@@ -18,8 +23,42 @@ export function StartScreen({ onStart }: StartScreenProps) {
           </ul>
         </div>
 
+        <div className="bg-white rounded-lg p-4 shadow-sm border border-gray-200 mb-8 text-left">
+          <h2 className="font-semibold text-gray-800 mb-3">Social pressure mode</h2>
+          <label className="flex items-start gap-2 text-sm text-gray-700 mb-2">
+            <input
+              type="radio"
+              name="social-mode"
+              value="classic"
+              checked={socialMode === 'classic'}
+              onChange={() => setSocialMode('classic')}
+            />
+            <span>Classic (no pressure)</span>
+          </label>
+          <label className="flex items-start gap-2 text-sm text-gray-700 mb-2">
+            <input
+              type="radio"
+              name="social-mode"
+              value="countdown"
+              checked={socialMode === 'countdown'}
+              onChange={() => setSocialMode('countdown')}
+            />
+            <span>Countdown (2-minute timer)</span>
+          </label>
+          <label className="flex items-start gap-2 text-sm text-gray-700">
+            <input
+              type="radio"
+              name="social-mode"
+              value="team"
+              checked={socialMode === 'team'}
+              onChange={() => setSocialMode('team')}
+            />
+            <span>Team mode (Spark vs Pop score)</span>
+          </label>
+        </div>
+
         <button
-          onClick={onStart}
+          onClick={() => onStart(socialMode)}
           className="w-full bg-accent text-white font-semibold py-4 px-8 rounded-lg text-lg active:bg-accent-light transition-colors"
         >
           Start Game

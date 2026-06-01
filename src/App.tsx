@@ -9,6 +9,11 @@ function App() {
     board,
     winningSquareIds,
     showBingoModal,
+    socialMode,
+    timeRemaining,
+    teamScores,
+    activeTeam,
+    teamWinner,
     startGame,
     handleSquareClick,
     resetGame,
@@ -25,6 +30,12 @@ function App() {
         board={board}
         winningSquareIds={winningSquareIds}
         hasBingo={gameState === 'bingo'}
+        isTimedOut={gameState === 'timeout'}
+        socialMode={socialMode}
+        timeRemaining={timeRemaining}
+        teamScores={teamScores}
+        activeTeam={activeTeam}
+        teamWinner={teamWinner}
         onSquareClick={handleSquareClick}
         onReset={resetGame}
       />
