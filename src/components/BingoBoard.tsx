@@ -9,11 +9,10 @@ interface BingoBoardProps {
 }
 
 export function BingoBoard({ boardSize, board, winningSquareIds, onSquareClick }: BingoBoardProps) {
+  const gridColumnsClass = boardSize === 3 ? 'grid-cols-3' : 'grid-cols-5';
+
   return (
-    <div
-      className="grid gap-1 w-full max-w-md mx-auto aspect-square"
-      style={{ gridTemplateColumns: `repeat(${boardSize}, minmax(0, 1fr))` }}
-    >
+    <div className={`grid ${gridColumnsClass} gap-1 w-full max-w-md mx-auto aspect-square`}>
       {board.map((square) => (
         <BingoSquare
           key={square.id}
