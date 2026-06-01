@@ -112,11 +112,7 @@ describe('useBingoGame', () => {
     expect(result.current.showBingoModal).toBe(true);
     act(() => { result.current.dismissModal(); });
 
-    // Clicking an already-marked square in row 0 unmarks and re-marks it
-    // Row 0 would be lost then regained — it should re-trigger because
-    // untoggling removes the bingo and re-marking restores it as "new"
-    // But clicking a square OUTSIDE row 0 that doesn't complete a new line
-    // should NOT show the modal again
+    // Clicking a square that doesn't complete a new line should NOT show the modal again
     await act(async () => {
       // Click a non-winning, non-marked square
       const unmarkedNonWinning = result.current.board.find(

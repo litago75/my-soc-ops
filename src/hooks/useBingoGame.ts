@@ -155,7 +155,9 @@ export function useBingoGame(): BingoGameState & BingoGameActions {
   );
   const [showBingoModal, setShowBingoModal] = useState(false);
 
-  // Track which winning lines have already triggered a win event
+  // Track which winning lines have already triggered a win event.
+  // Pre-populate from any lines already completed on the loaded board so that
+  // resuming a saved game does not re-trigger wins the user has already seen.
   const seenLineKeys = useRef<Set<string>>(
     new Set(
       checkAllBingos(loadedState?.board ?? []).map(lineKey)
