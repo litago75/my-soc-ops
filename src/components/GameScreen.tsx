@@ -5,6 +5,8 @@ interface GameScreenProps {
   board: BingoSquareData[];
   winningSquareIds: Set<number>;
   hasBingo: boolean;
+  streak: number;
+  isCombo: boolean;
   onSquareClick: (squareId: number) => void;
   onReset: () => void;
 }
@@ -13,6 +15,8 @@ export function GameScreen({
   board,
   winningSquareIds,
   hasBingo,
+  streak,
+  isCombo,
   onSquareClick,
   onReset,
 }: GameScreenProps) {
@@ -34,6 +38,18 @@ export function GameScreen({
       <p className="text-center text-gray-500 text-sm py-2 px-4">
         Tap a square when you find someone who matches it.
       </p>
+
+      {/* Progression indicators */}
+      {isCombo && (
+        <div className="bg-purple-100 text-purple-800 text-center py-1.5 font-semibold text-sm animate-pulse">
+          ⚡ Combo! Keep going!
+        </div>
+      )}
+      {streak >= 2 && (
+        <div className="bg-orange-50 text-orange-700 text-center py-1 text-xs font-medium">
+          🔥 {streak} in a row
+        </div>
+      )}
 
       {/* Bingo indicator */}
       {hasBingo && (

@@ -1,11 +1,14 @@
-import { useState, useCallback, useMemo, useEffect } from 'react';
+import { useState, useCallback, useMemo, useEffect, useRef } from 'react';
 import type { BingoSquareData, BingoLine, GameState } from '../types';
 import {
   generateBoard,
   toggleSquare,
-  checkBingo,
+  checkAllBingos,
   getWinningSquareIds,
 } from '../utils/bingoLogic';
+
+/** How quickly two consecutive marks must occur (ms) to activate a combo */
+const COMBO_WINDOW_MS = 3000;
 
 export interface BingoGameState {
   gameState: GameState;
@@ -13,6 +16,12 @@ export interface BingoGameState {
   winningLine: BingoLine | null;
   winningSquareIds: Set<number>;
   showBingoModal: boolean;
+  /** Number of consecutive squares marked without an unmark */
+  streak: number;
+  /** True while consecutive marks are happening within COMBO_WINDOW_MS */
+  isCombo: boolean;
+  /** Total winning lines completed this game */
+  completedLineCount: number;
 }
 
 export interface BingoGameActions {
@@ -32,6 +41,10 @@ interface StoredGameData {
   winningLine: BingoLine | null;
 }
 
+function lineKey(line: BingoLine): string {
+  return `${line.type}-${line.index}`;
+}
+
 function validateStoredData(data: unknown): data is StoredGameData {
   if (!data || typeof data !== 'object') {
     return false;
@@ -43,7 +56,7 @@ function validateStoredData(data: unknown): data is StoredGameData {
     return false;
   }
   
-  if (typeof obj.gameState !== 'string' || !['start', 'playing', 'bingo'].includes(obj.gameState)) {
+  if (typeof obj.gameState !== 'string' || !['start', 'playing', 'bingo', 'double-bingo'].includes(obj.gameState)) {
     return false;
   }
   
@@ -150,6 +163,21 @@ export function useBingoGame(): BingoGameState & BingoGameActions {
     () => loadedState?.winningLine || null
   );
   const [showBingoModal, setShowBingoModal] = useState(false);
+  const [streak, setStreak] = useState(0);
+  const [isCombo, setIsCombo] = useState(false);
+  const [completedLineCount, setCompletedLineCount] = useState(
+    () => checkAllBingos(loadedState?.board ?? []).length
+  );
+
+  // Track which winning lines have already triggered a win event.
+  // Pre-populate from any lines already completed on the loaded board so that
+  // resuming a saved game does not re-trigger wins the user has already seen.
+  const seenLineKeys = useRef<Set<string>>(
+    new Set(checkAllBingos(loadedState?.board ?? []).map(lineKey))
+  );
+
+  const lastMarkTimeRef = useRef<number>(0);
+  const comboTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const winningSquareIds = useMemo(
     () => getWinningSquareIds(winningLine),
@@ -162,35 +190,84 @@ export function useBingoGame(): BingoGameState & BingoGameActions {
   }, [gameState, board, winningLine]);
 
   const startGame = useCallback(() => {
+    seenLineKeys.current = new Set();
+    lastMarkTimeRef.current = 0;
+    if (comboTimerRef.current) clearTimeout(comboTimerRef.current);
     setBoard(generateBoard());
     setWinningLine(null);
     setGameState('playing');
+    setStreak(0);
+    setIsCombo(false);
+    setCompletedLineCount(0);
   }, []);
 
   const handleSquareClick = useCallback((squareId: number) => {
     setBoard((currentBoard) => {
+      const square = currentBoard.find((s) => s.id === squareId);
+      if (!square || square.isFreeSpace) return currentBoard;
+
       const newBoard = toggleSquare(currentBoard, squareId);
-      
-      // Check for bingo after toggling
-      const bingo = checkBingo(newBoard);
-      if (bingo && !winningLine) {
-        // Schedule state updates to avoid synchronous setState in effect
-        queueMicrotask(() => {
-          setWinningLine(bingo);
-          setGameState('bingo');
-          setShowBingoModal(true);
-        });
-      }
-      
+      const nowMarked = !square.isMarked;
+
+      // Find any newly completed lines not previously reported as wins
+      const newLines = nowMarked
+        ? checkAllBingos(newBoard).filter(
+            (line) => !seenLineKeys.current.has(lineKey(line))
+          )
+        : [];
+
+      // Mark all new lines as seen before scheduling state updates
+      newLines.forEach((line) => seenLineKeys.current.add(lineKey(line)));
+      const totalCompleted = seenLineKeys.current.size;
+
+      // Schedule state updates to avoid synchronous setState in updater
+      queueMicrotask(() => {
+        if (nowMarked) {
+          setStreak((s) => s + 1);
+
+          // Activate combo when two marks happen within COMBO_WINDOW_MS
+          const now = Date.now();
+          if (lastMarkTimeRef.current > 0 && now - lastMarkTimeRef.current < COMBO_WINDOW_MS) {
+            setIsCombo(true);
+          }
+          lastMarkTimeRef.current = now;
+
+          // Reset the combo expiry timer on every mark
+          if (comboTimerRef.current) clearTimeout(comboTimerRef.current);
+          comboTimerRef.current = setTimeout(() => {
+            setIsCombo(false);
+          }, COMBO_WINDOW_MS);
+
+          if (newLines.length > 0) {
+            setWinningLine(newLines[0]);
+            setCompletedLineCount(totalCompleted);
+            setGameState(totalCompleted >= 2 ? 'double-bingo' : 'bingo');
+            setShowBingoModal(true);
+          }
+        } else {
+          // Unmark: reset streak and combo
+          setStreak(0);
+          setIsCombo(false);
+          lastMarkTimeRef.current = 0;
+          if (comboTimerRef.current) clearTimeout(comboTimerRef.current);
+        }
+      });
+
       return newBoard;
     });
-  }, [winningLine]);
+  }, []);
 
   const resetGame = useCallback(() => {
+    seenLineKeys.current = new Set();
+    lastMarkTimeRef.current = 0;
+    if (comboTimerRef.current) clearTimeout(comboTimerRef.current);
     setGameState('start');
     setBoard([]);
     setWinningLine(null);
     setShowBingoModal(false);
+    setStreak(0);
+    setIsCombo(false);
+    setCompletedLineCount(0);
   }, []);
 
   const dismissModal = useCallback(() => {
@@ -203,6 +280,9 @@ export function useBingoGame(): BingoGameState & BingoGameActions {
     winningLine,
     winningSquareIds,
     showBingoModal,
+    streak,
+    isCombo,
+    completedLineCount,
     startGame,
     handleSquareClick,
     resetGame,

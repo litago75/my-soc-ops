@@ -118,6 +118,15 @@ export function checkBingo(board: BingoSquareData[]): BingoLine | null {
 }
 
 /**
+ * Return all currently completed winning lines on the board
+ */
+export function checkAllBingos(board: BingoSquareData[]): BingoLine[] {
+  if (board.length === 0) return [];
+  const lines = getWinningLines();
+  return lines.filter((line) => line.squares.every((idx) => board[idx]?.isMarked));
+}
+
+/**
  * Get the square IDs that are part of a winning line
  */
 export function getWinningSquareIds(line: BingoLine | null): Set<number> {

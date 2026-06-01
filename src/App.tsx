@@ -9,6 +9,9 @@ function App() {
     board,
     winningSquareIds,
     showBingoModal,
+    streak,
+    isCombo,
+    completedLineCount,
     startGame,
     handleSquareClick,
     resetGame,
@@ -24,12 +27,17 @@ function App() {
       <GameScreen
         board={board}
         winningSquareIds={winningSquareIds}
-        hasBingo={gameState === 'bingo'}
+        hasBingo={gameState === 'bingo' || gameState === 'double-bingo'}
+        streak={streak}
+        isCombo={isCombo}
         onSquareClick={handleSquareClick}
         onReset={resetGame}
       />
       {showBingoModal && (
-        <BingoModal onDismiss={dismissModal} />
+        <BingoModal
+          isDoubleBingo={completedLineCount >= 2}
+          onDismiss={dismissModal}
+        />
       )}
     </>
   );
