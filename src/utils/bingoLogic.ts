@@ -9,6 +9,7 @@ export const MODE_CONFIG: Record<GameMode, { boardSize: number }> = {
   classic: { boardSize: 5 },
   chaos: { boardSize: 5 },
 };
+const MIN_BOARD_SIZE = Math.min(...Object.values(MODE_CONFIG).map((mode) => mode.boardSize));
 
 /**
  * Shuffle an array using Fisher-Yates algorithm
@@ -122,7 +123,7 @@ function getWinningLines(boardSize: number): BingoLine[] {
  */
 export function checkBingo(board: BingoSquareData[]): BingoLine | null {
   const boardSize = Math.sqrt(board.length);
-  if (!Number.isInteger(boardSize) || boardSize < 3) {
+  if (!Number.isInteger(boardSize) || boardSize < MIN_BOARD_SIZE) {
     return null;
   }
 
