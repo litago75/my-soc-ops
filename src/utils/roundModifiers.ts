@@ -13,12 +13,15 @@ export const ROUND_MODIFIER_LABELS: Record<RoundModifierId, string> = {
   'speed-round-bonus-window': 'Speed round bonus window',
 };
 
-export function resolveRoundModifier(selection: RoundModifierSelection): RoundModifierId {
+export function resolveRoundModifier(
+  selection: RoundModifierSelection,
+  randomFn: () => number = Math.random
+): RoundModifierId {
   if (selection !== 'random') {
     return selection;
   }
 
-  const idx = Math.floor(Math.random() * RANDOMIZABLE_ROUND_MODIFIERS.length);
+  const idx = Math.floor(randomFn() * RANDOMIZABLE_ROUND_MODIFIERS.length);
   return RANDOMIZABLE_ROUND_MODIFIERS[idx];
 }
 

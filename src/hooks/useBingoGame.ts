@@ -59,21 +59,21 @@ function validateStoredData(data: unknown): data is StoredGameData {
   if (!data || typeof data !== 'object') {
     return false;
   }
-  
+
   const obj = data as Record<string, unknown>;
-  
+
   if (obj.version !== STORAGE_VERSION) {
     return false;
   }
-  
+
   if (typeof obj.gameState !== 'string' || !['start', 'playing', 'bingo'].includes(obj.gameState)) {
     return false;
   }
-  
+
   if (!Array.isArray(obj.board) || (obj.board.length !== 0 && obj.board.length !== 25)) {
     return false;
   }
-  
+
   const validSquares = obj.board.every((sq: unknown) => {
     if (!sq || typeof sq !== 'object') return false;
     const square = sq as Record<string, unknown>;
@@ -84,11 +84,11 @@ function validateStoredData(data: unknown): data is StoredGameData {
       typeof square.isFreeSpace === 'boolean'
     );
   });
-  
+
   if (!validSquares) {
     return false;
   }
-  
+
   if (obj.winningLine !== null) {
     if (typeof obj.winningLine !== 'object') {
       return false;
@@ -134,7 +134,7 @@ function validateStoredData(data: unknown): data is StoredGameData {
   ) {
     return false;
   }
-  
+
   return true;
 }
 
@@ -159,7 +159,7 @@ function loadGameState():
     }
 
     const parsed = JSON.parse(saved);
-    
+
     if (validateStoredData(parsed)) {
       return {
         gameState: parsed.gameState,
@@ -295,7 +295,14 @@ export function useBingoGame(): BingoGameState & BingoGameActions {
         return currentBoard;
       }
 
-      if (squareId === wildcardClaimedSquareId && currentBoard[squareId]?.isMarked) {
+      const targetSquare = currentBoard[squareId];
+      if (!targetSquare) {
+        return currentBoard;
+      }
+
+      // Wildcard claims are intentionally locked after use: this keeps the
+      // one-time "claim without a match" effect meaningful.
+      if (squareId === wildcardClaimedSquareId && targetSquare.isMarked) {
         return currentBoard;
       }
 
@@ -303,15 +310,15 @@ export function useBingoGame(): BingoGameState & BingoGameActions {
         activeModifier === 'wildcard-square' &&
         wildcardArmed &&
         !wildcardUsed &&
-        !currentBoard[squareId]?.isFreeSpace &&
-        !currentBoard[squareId]?.isMarked;
+        !targetSquare.isFreeSpace &&
+        !targetSquare.isMarked;
 
       const newBoard = isWildcardMove
         ? currentBoard.map((square) =>
             square.id === squareId ? { ...square, isMarked: true } : square
           )
         : toggleSquare(currentBoard, squareId);
-      
+
       // Check for bingo after toggling
       const bingo = checkBingo(newBoard);
       if (isWildcardMove) {
@@ -338,7 +345,7 @@ export function useBingoGame(): BingoGameState & BingoGameActions {
           setScore(nextScore);
         });
       }
-      
+
       return newBoard;
     });
   }, [
