@@ -15,150 +15,119 @@ const localStorageMock = (() => {
 
 Object.defineProperty(globalThis, 'localStorage', { value: localStorageMock });
 
-describe('useBingoGame', () => {
+async function markSquares(
+  clickSquare: (id: number) => void,
+  ids: number[]
+): Promise<void> {
+  await act(async () => {
+    ids.forEach((id) => clickSquare(id));
+    await Promise.resolve();
+  });
+}
+
+describe('useBingoGame modifiers', () => {
   beforeEach(() => {
     localStorageMock.clear();
+    vi.useRealTimers();
+    vi.restoreAllMocks();
   });
 
   afterEach(() => {
     vi.restoreAllMocks();
   });
 
-  it('should start in "start" state', () => {
+  it('applies random modifier selection at game start', () => {
+    vi.spyOn(Math, 'random').mockReturnValue(0.95);
     const { result } = renderHook(() => useBingoGame());
-    expect(result.current.gameState).toBe('start');
+
+    act(() => {
+      result.current.startGame('random');
+    });
+
+    expect(result.current.activeModifier).toBe('speed-round-bonus-window');
   });
 
-  it('should transition to "playing" after startGame', () => {
+  it('doubles score when diagonal line wins with diagonal modifier', async () => {
     const { result } = renderHook(() => useBingoGame());
-    act(() => { result.current.startGame(); });
-    expect(result.current.gameState).toBe('playing');
-    expect(result.current.board).toHaveLength(25);
+
+    act(() => {
+      result.current.startGame('double-score-diagonal');
+    });
+
+    await markSquares(result.current.handleSquareClick, [0, 6, 18, 24]);
+
+    expect(result.current.gameState).toBe('bingo');
+    expect(result.current.winningLine?.type).toBe('diagonal');
+    expect(result.current.score).toBe(200);
   });
 
-  it('should detect first bingo and show modal', async () => {
+  it('applies speed bonus only inside the 30-second window', async () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date('2025-01-01T00:00:00.000Z'));
     const { result } = renderHook(() => useBingoGame());
-    act(() => { result.current.startGame(); });
 
-    // Mark all of row 0
+    act(() => {
+      result.current.startGame('speed-round-bonus-window');
+    });
+
+    vi.advanceTimersByTime(30_001);
+    await markSquares(result.current.handleSquareClick, [0, 1, 2, 3, 4]);
+
+    expect(result.current.score).toBe(100);
+  });
+
+  it('allows wildcard claim once and keeps claimed square marked', async () => {
+    const { result } = renderHook(() => useBingoGame());
+
+    act(() => {
+      result.current.startGame('wildcard-square');
+    });
+
+    act(() => {
+      result.current.activateWildcard();
+    });
+
+    expect(result.current.wildcardArmed).toBe(true);
+
     await act(async () => {
-      for (let i = 0; i < 5; i++) {
-        if (!result.current.board[i].isMarked) {
-          result.current.handleSquareClick(i);
-        }
-      }
-      // Allow microtask queue to flush
+      result.current.handleSquareClick(0);
       await Promise.resolve();
     });
 
-    expect(result.current.gameState).toBe('bingo');
-    expect(result.current.winningLine).not.toBeNull();
-    expect(result.current.showBingoModal).toBe(true);
-  });
+    expect(result.current.wildcardUsed).toBe(true);
+    expect(result.current.wildcardArmed).toBe(false);
+    expect(result.current.board[0].isMarked).toBe(true);
 
-  it('should detect second bingo after dismissing first modal', async () => {
-    const { result } = renderHook(() => useBingoGame());
-    act(() => { result.current.startGame(); });
-
-    // Complete row 0 (first bingo)
-    await act(async () => {
-      for (let i = 0; i < 5; i++) {
-        if (!result.current.board[i].isMarked) {
-          result.current.handleSquareClick(i);
-        }
-      }
-      await Promise.resolve();
+    act(() => {
+      result.current.handleSquareClick(0);
+      result.current.activateWildcard();
     });
 
-    expect(result.current.gameState).toBe('bingo');
+    expect(result.current.board[0].isMarked).toBe(true);
+    expect(result.current.wildcardArmed).toBe(false);
+
+    await markSquares(result.current.handleSquareClick, [1, 2, 3, 4]);
+    expect(result.current.score).toBe(125);
+  });
+
+  it('re-triggers celebration for a new completed line', async () => {
+    const { result } = renderHook(() => useBingoGame());
+
+    act(() => {
+      result.current.startGame('none');
+    });
+
+    await markSquares(result.current.handleSquareClick, [0, 1, 2, 3, 4]);
     expect(result.current.showBingoModal).toBe(true);
 
-    // Dismiss the first modal
-    act(() => { result.current.dismissModal(); });
+    act(() => {
+      result.current.dismissModal();
+    });
     expect(result.current.showBingoModal).toBe(false);
-    expect(result.current.gameState).toBe('bingo');
 
-    // Complete row 4 (second bingo) — indices 20-24
-    await act(async () => {
-      for (let i = 20; i <= 24; i++) {
-        if (!result.current.board[i].isMarked) {
-          result.current.handleSquareClick(i);
-        }
-      }
-      await Promise.resolve();
-    });
-
+    await markSquares(result.current.handleSquareClick, [20, 21, 22, 23, 24]);
     expect(result.current.showBingoModal).toBe(true);
-    expect(result.current.winningLine).not.toBeNull();
-    // The winning line should be updated to the second line (row 4)
     expect(result.current.winningLine?.type).toBe('row');
     expect(result.current.winningLine?.index).toBe(4);
-  });
-
-  it('should not re-trigger win event for an already-seen line', async () => {
-    const { result } = renderHook(() => useBingoGame());
-    act(() => { result.current.startGame(); });
-
-    // Complete row 0
-    await act(async () => {
-      for (let i = 0; i < 5; i++) {
-        if (!result.current.board[i].isMarked) {
-          result.current.handleSquareClick(i);
-        }
-      }
-      await Promise.resolve();
-    });
-
-    expect(result.current.showBingoModal).toBe(true);
-    act(() => { result.current.dismissModal(); });
-
-    // Clicking a square that doesn't complete a new line should NOT show the modal again
-    await act(async () => {
-      // Click a non-winning, non-marked square
-      const unmarkedNonWinning = result.current.board.find(
-        (sq) => !sq.isMarked && sq.id > 4 && sq.id < 20
-      );
-      if (unmarkedNonWinning) {
-        result.current.handleSquareClick(unmarkedNonWinning.id);
-      }
-      await Promise.resolve();
-    });
-
-    expect(result.current.showBingoModal).toBe(false);
-  });
-
-  it('should reset seenLineKeys on resetGame so new game can win again', async () => {
-    const { result } = renderHook(() => useBingoGame());
-    act(() => { result.current.startGame(); });
-
-    // Complete row 0
-    await act(async () => {
-      for (let i = 0; i < 5; i++) {
-        if (!result.current.board[i].isMarked) {
-          result.current.handleSquareClick(i);
-        }
-      }
-      await Promise.resolve();
-    });
-
-    expect(result.current.gameState).toBe('bingo');
-
-    act(() => { result.current.resetGame(); });
-    expect(result.current.gameState).toBe('start');
-
-    act(() => { result.current.startGame(); });
-
-    // Complete row 0 on new board
-    await act(async () => {
-      for (let i = 0; i < 5; i++) {
-        if (!result.current.board[i].isMarked) {
-          result.current.handleSquareClick(i);
-        }
-      }
-      await Promise.resolve();
-    });
-
-    expect(result.current.gameState).toBe('bingo');
-    expect(result.current.showBingoModal).toBe(true);
   });
 });

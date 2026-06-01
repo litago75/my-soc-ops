@@ -1,8 +1,13 @@
+import { useState } from 'react';
+import type { RoundModifierSelection } from '../types';
+
 interface StartScreenProps {
-  onStart: () => void;
+  onStart: (selection: RoundModifierSelection) => void;
 }
 
 export function StartScreen({ onStart }: StartScreenProps) {
+  const [selection, setSelection] = useState<RoundModifierSelection>('none');
+
   return (
     <div className="relative flex flex-col items-center justify-center min-h-full overflow-hidden p-6">
       <div className="pointer-events-none absolute -top-16 -left-14 h-48 w-48 rounded-full bg-candy-pink/25 blur-2xl" />
@@ -21,8 +26,26 @@ export function StartScreen({ onStart }: StartScreenProps) {
           </ul>
         </div>
 
+        <div className="bg-white rounded-lg p-4 shadow-sm border border-gray-200 mb-5 text-left">
+          <label htmlFor="round-modifier" className="block text-sm font-medium text-gray-700 mb-2">
+            Round modifier (optional)
+          </label>
+          <select
+            id="round-modifier"
+            value={selection}
+            onChange={(event) => setSelection(event.target.value as RoundModifierSelection)}
+            className="w-full rounded border border-gray-300 px-3 py-2 text-sm text-gray-700"
+          >
+            <option value="none">No modifier</option>
+            <option value="random">Random modifier</option>
+            <option value="double-score-diagonal">Double-score diagonal</option>
+            <option value="wildcard-square">Wildcard square</option>
+            <option value="speed-round-bonus-window">Speed round bonus window</option>
+          </select>
+        </div>
+
         <button
-          onClick={onStart}
+          onClick={() => onStart(selection)}
           className="w-full rounded-2xl border-b-4 border-candy-pink-dark bg-accent px-8 py-4 font-display text-2xl font-extrabold text-white shadow-candy-button transition-all hover:-translate-y-0.5 active:translate-y-0.5 active:border-b-2 active:bg-accent-light"
         >
           Start Game

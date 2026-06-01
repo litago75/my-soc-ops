@@ -5,7 +5,12 @@ interface GameScreenProps {
   board: BingoSquareData[];
   winningSquareIds: Set<number>;
   hasBingo: boolean;
+  score: number;
+  activeModifierLabel: string;
+  wildcardArmed: boolean;
+  canUseWildcard: boolean;
   onSquareClick: (squareId: number) => void;
+  onUseWildcard: () => void;
   onReset: () => void;
 }
 
@@ -13,7 +18,12 @@ export function GameScreen({
   board,
   winningSquareIds,
   hasBingo,
+  score,
+  activeModifierLabel,
+  wildcardArmed,
+  canUseWildcard,
   onSquareClick,
+  onUseWildcard,
   onReset,
 }: GameScreenProps) {
   return (
@@ -33,9 +43,22 @@ export function GameScreen({
       </header>
 
       {/* Instructions */}
-      <p className="px-4 py-3 text-center text-sm font-bold text-candy-ink/80">
-        Tap a square when you find someone who matches it.
-      </p>
+      <div className="px-4 py-3 text-center text-sm font-bold text-candy-ink/80">
+        <p>Tap a square when you find someone who matches it.</p>
+        <p className="mt-1 text-candy-violet">Modifier: {activeModifierLabel}</p>
+        <p className="text-candy-violet">Score: {score}</p>
+      </div>
+
+      {canUseWildcard && (
+        <div className="px-4 pb-2">
+          <button
+            onClick={onUseWildcard}
+            className="w-full rounded-lg border border-amber-300 bg-amber-50 py-2 text-sm font-semibold text-amber-800 active:bg-amber-100"
+          >
+            {wildcardArmed ? 'Tap a square to claim your wildcard' : 'Use wildcard square'}
+          </button>
+        </div>
+      )}
 
       {/* Bingo indicator */}
       {hasBingo && (
