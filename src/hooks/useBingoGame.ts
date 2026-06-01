@@ -1,11 +1,22 @@
 import { useState, useCallback, useMemo, useEffect } from 'react';
-import type { BingoSquareData, BingoLine, GameState } from '../types';
+import type {
+  BingoSquareData,
+  BingoLine,
+  GameState,
+  RoundModifierId,
+  RoundModifierSelection,
+} from '../types';
 import {
   generateBoard,
   toggleSquare,
   checkBingo,
   getWinningSquareIds,
 } from '../utils/bingoLogic';
+import {
+  ROUND_MODIFIER_LABELS,
+  computeRoundScore,
+  resolveRoundModifier,
+} from '../utils/roundModifiers';
 
 export interface BingoGameState {
   gameState: GameState;
@@ -13,23 +24,35 @@ export interface BingoGameState {
   winningLine: BingoLine | null;
   winningSquareIds: Set<number>;
   showBingoModal: boolean;
+  activeModifier: RoundModifierId;
+  score: number;
+  wildcardUsed: boolean;
+  wildcardArmed: boolean;
+  canUseWildcard: boolean;
+  activeModifierLabel: string;
 }
 
 export interface BingoGameActions {
-  startGame: () => void;
+  startGame: (selection: RoundModifierSelection) => void;
   handleSquareClick: (squareId: number) => void;
+  activateWildcard: () => void;
   resetGame: () => void;
   dismissModal: () => void;
 }
 
 const STORAGE_KEY = 'bingo-game-state';
-const STORAGE_VERSION = 1;
+const STORAGE_VERSION = 2;
 
 interface StoredGameData {
   version: number;
   gameState: GameState;
   board: BingoSquareData[];
   winningLine: BingoLine | null;
+  activeModifier: RoundModifierId;
+  score: number;
+  wildcardUsed: boolean;
+  roundStartedAt: number;
+  wildcardClaimedSquareId: number | null;
 }
 
 function validateStoredData(data: unknown): data is StoredGameData {
@@ -80,11 +103,50 @@ function validateStoredData(data: unknown): data is StoredGameData {
       return false;
     }
   }
+
+  if (
+    typeof obj.activeModifier !== 'string' ||
+    ![
+      'none',
+      'double-score-diagonal',
+      'wildcard-square',
+      'speed-round-bonus-window',
+    ].includes(obj.activeModifier)
+  ) {
+    return false;
+  }
+
+  if (typeof obj.score !== 'number') {
+    return false;
+  }
+
+  if (typeof obj.wildcardUsed !== 'boolean') {
+    return false;
+  }
+
+  if (typeof obj.roundStartedAt !== 'number') {
+    return false;
+  }
+
+  if (
+    obj.wildcardClaimedSquareId !== null &&
+    typeof obj.wildcardClaimedSquareId !== 'number'
+  ) {
+    return false;
+  }
   
   return true;
 }
 
-function loadGameState(): Pick<BingoGameState, 'gameState' | 'board' | 'winningLine'> | null {
+function loadGameState():
+  | Pick<
+      BingoGameState,
+      'gameState' | 'board' | 'winningLine' | 'activeModifier' | 'score' | 'wildcardUsed'
+    > & {
+      roundStartedAt: number;
+      wildcardClaimedSquareId: number | null;
+    }
+  | null {
   // SSR guard
   if (typeof window === 'undefined') {
     return null;
@@ -103,6 +165,11 @@ function loadGameState(): Pick<BingoGameState, 'gameState' | 'board' | 'winningL
         gameState: parsed.gameState,
         board: parsed.board,
         winningLine: parsed.winningLine,
+        activeModifier: parsed.activeModifier,
+        score: parsed.score,
+        wildcardUsed: parsed.wildcardUsed,
+        roundStartedAt: parsed.roundStartedAt,
+        wildcardClaimedSquareId: parsed.wildcardClaimedSquareId,
       };
     } else {
       console.warn('Invalid game state data in localStorage, clearing...');
@@ -118,7 +185,16 @@ function loadGameState(): Pick<BingoGameState, 'gameState' | 'board' | 'winningL
   return null;
 }
 
-function saveGameState(gameState: GameState, board: BingoSquareData[], winningLine: BingoLine | null): void {
+function saveGameState(
+  gameState: GameState,
+  board: BingoSquareData[],
+  winningLine: BingoLine | null,
+  activeModifier: RoundModifierId,
+  score: number,
+  wildcardUsed: boolean,
+  roundStartedAt: number,
+  wildcardClaimedSquareId: number | null
+): void {
   // SSR guard
   if (typeof window === 'undefined') {
     return;
@@ -130,6 +206,11 @@ function saveGameState(gameState: GameState, board: BingoSquareData[], winningLi
       gameState,
       board,
       winningLine,
+      activeModifier,
+      score,
+      wildcardUsed,
+      roundStartedAt,
+      wildcardClaimedSquareId,
     };
     localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
   } catch (error) {
@@ -150,6 +231,22 @@ export function useBingoGame(): BingoGameState & BingoGameActions {
     () => loadedState?.winningLine || null
   );
   const [showBingoModal, setShowBingoModal] = useState(false);
+  const [activeModifier, setActiveModifier] = useState<RoundModifierId>(
+    () => loadedState?.activeModifier || 'none'
+  );
+  const [score, setScore] = useState<number>(() => loadedState?.score ?? 0);
+  const [wildcardUsed, setWildcardUsed] = useState<boolean>(
+    () => loadedState?.wildcardUsed ?? false
+  );
+  const [wildcardArmed, setWildcardArmed] = useState(false);
+  const [roundStartedAt, setRoundStartedAt] = useState<number>(
+    () => loadedState?.roundStartedAt ?? Date.now()
+  );
+  const [wildcardClaimedSquareId, setWildcardClaimedSquareId] = useState<number | null>(
+    () => loadedState?.wildcardClaimedSquareId ?? null
+  );
+  const canUseWildcard = activeModifier === 'wildcard-square' && !wildcardUsed;
+  const activeModifierLabel = ROUND_MODIFIER_LABELS[activeModifier];
 
   const winningSquareIds = useMemo(
     () => getWinningSquareIds(winningLine),
@@ -158,39 +255,119 @@ export function useBingoGame(): BingoGameState & BingoGameActions {
 
   // Save game state to localStorage whenever it changes
   useEffect(() => {
-    saveGameState(gameState, board, winningLine);
-  }, [gameState, board, winningLine]);
+    saveGameState(
+      gameState,
+      board,
+      winningLine,
+      activeModifier,
+      score,
+      wildcardUsed,
+      roundStartedAt,
+      wildcardClaimedSquareId
+    );
+  }, [
+    gameState,
+    board,
+    winningLine,
+    activeModifier,
+    score,
+    wildcardUsed,
+    roundStartedAt,
+    wildcardClaimedSquareId,
+  ]);
 
-  const startGame = useCallback(() => {
+  const startGame = useCallback((selection: RoundModifierSelection) => {
+    const resolvedModifier = resolveRoundModifier(selection);
     setBoard(generateBoard());
     setWinningLine(null);
+    setActiveModifier(resolvedModifier);
+    setScore(0);
+    setWildcardUsed(false);
+    setWildcardArmed(false);
+    setRoundStartedAt(Date.now());
+    setWildcardClaimedSquareId(null);
     setGameState('playing');
   }, []);
 
   const handleSquareClick = useCallback((squareId: number) => {
     setBoard((currentBoard) => {
-      const newBoard = toggleSquare(currentBoard, squareId);
+      if (currentBoard.length === 0) {
+        return currentBoard;
+      }
+
+      if (squareId === wildcardClaimedSquareId && currentBoard[squareId]?.isMarked) {
+        return currentBoard;
+      }
+
+      const isWildcardMove =
+        activeModifier === 'wildcard-square' &&
+        wildcardArmed &&
+        !wildcardUsed &&
+        !currentBoard[squareId]?.isFreeSpace &&
+        !currentBoard[squareId]?.isMarked;
+
+      const newBoard = isWildcardMove
+        ? currentBoard.map((square) =>
+            square.id === squareId ? { ...square, isMarked: true } : square
+          )
+        : toggleSquare(currentBoard, squareId);
       
       // Check for bingo after toggling
       const bingo = checkBingo(newBoard);
+      if (isWildcardMove) {
+        queueMicrotask(() => {
+          setWildcardUsed(true);
+          setWildcardArmed(false);
+          setWildcardClaimedSquareId(squareId);
+        });
+      }
+
       if (bingo && !winningLine) {
+        const nextScore = computeRoundScore(
+          bingo,
+          activeModifier,
+          roundStartedAt,
+          wildcardUsed || isWildcardMove
+        );
+
         // Schedule state updates to avoid synchronous setState in effect
         queueMicrotask(() => {
           setWinningLine(bingo);
           setGameState('bingo');
           setShowBingoModal(true);
+          setScore(nextScore);
         });
       }
       
       return newBoard;
     });
-  }, [winningLine]);
+  }, [
+    activeModifier,
+    roundStartedAt,
+    wildcardArmed,
+    wildcardClaimedSquareId,
+    wildcardUsed,
+    winningLine,
+  ]);
+
+  const activateWildcard = useCallback(() => {
+    if (activeModifier !== 'wildcard-square' || wildcardUsed || gameState !== 'playing') {
+      return;
+    }
+    setWildcardArmed(true);
+  }, [activeModifier, gameState, wildcardUsed]);
 
   const resetGame = useCallback(() => {
     setGameState('start');
     setBoard([]);
     setWinningLine(null);
     setShowBingoModal(false);
+    setActiveModifier('none');
+    setScore(0);
+    setWildcardUsed(false);
+    setWildcardArmed(false);
+    setRoundStartedAt(Date.now());
+    setWildcardClaimedSquareId(null);
   }, []);
 
   const dismissModal = useCallback(() => {
@@ -203,8 +380,15 @@ export function useBingoGame(): BingoGameState & BingoGameActions {
     winningLine,
     winningSquareIds,
     showBingoModal,
+    activeModifier,
+    score,
+    wildcardUsed,
+    wildcardArmed,
+    canUseWildcard,
+    activeModifierLabel,
     startGame,
     handleSquareClick,
+    activateWildcard,
     resetGame,
     dismissModal,
   };

@@ -1,8 +1,13 @@
+import { useState } from 'react';
+import type { RoundModifierSelection } from '../types';
+
 interface StartScreenProps {
-  onStart: () => void;
+  onStart: (selection: RoundModifierSelection) => void;
 }
 
 export function StartScreen({ onStart }: StartScreenProps) {
+  const [selection, setSelection] = useState<RoundModifierSelection>('none');
+
   return (
     <div className="flex flex-col items-center justify-center min-h-full p-6 bg-gray-50">
       <div className="text-center max-w-sm">
@@ -18,8 +23,26 @@ export function StartScreen({ onStart }: StartScreenProps) {
           </ul>
         </div>
 
+        <div className="bg-white rounded-lg p-4 shadow-sm border border-gray-200 mb-5 text-left">
+          <label htmlFor="round-modifier" className="block text-sm font-medium text-gray-700 mb-2">
+            Round modifier (optional)
+          </label>
+          <select
+            id="round-modifier"
+            value={selection}
+            onChange={(event) => setSelection(event.target.value as RoundModifierSelection)}
+            className="w-full rounded border border-gray-300 px-3 py-2 text-sm text-gray-700"
+          >
+            <option value="none">No modifier</option>
+            <option value="random">Random modifier</option>
+            <option value="double-score-diagonal">Double-score diagonal</option>
+            <option value="wildcard-square">Wildcard square</option>
+            <option value="speed-round-bonus-window">Speed round bonus window</option>
+          </select>
+        </div>
+
         <button
-          onClick={onStart}
+          onClick={() => onStart(selection)}
           className="w-full bg-accent text-white font-semibold py-4 px-8 rounded-lg text-lg active:bg-accent-light transition-colors"
         >
           Start Game
