@@ -12,7 +12,7 @@ export function BingoSquare({ square, isWinning, onClick }: BingoSquareProps) {
 
   const stateClasses = square.isMarked
     ? isWinning
-      ? 'border-candy-mint bg-candy-mint/55 text-candy-ink shadow-[0_0_0_2px_#ffffff70]'
+      ? 'border-candy-mint bg-candy-mint/55 text-candy-ink ring-2 ring-white/45'
       : 'border-marked-border bg-marked text-candy-ink'
     : 'border-white/90 bg-candy-cream/90 text-candy-ink hover:bg-candy-yellow/30 active:bg-candy-yellow/45';
 

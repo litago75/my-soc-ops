@@ -12,6 +12,14 @@
   --color-candy-sky: #9ed5ff;
   --color-candy-cream: #fff8e8;
   --color-candy-ink: #3f2c5d;
+  --letter-spacing-candy: 0.22em;
+  --shadow-title-pop: 0 3px 0 #fff;
+  --shadow-candy-card: 0 12px 35px -16px #ff4ea3;
+  --shadow-candy-button: 0 12px 24px -14px #ff4ea3;
+  --shadow-candy-header: 0 12px 32px -18px #8064ff;
+  --shadow-candy-indicator: 0 10px 24px -18px #5de4c7;
+  --shadow-candy-board: 0 24px 45px -28px #ff4ea3;
+  --shadow-candy-modal: 0 30px 60px -28px #8064ff;
   --color-accent: #ff4ea3;
   --color-accent-light: #ff6cb4;
   --color-marked: #ffdd80;

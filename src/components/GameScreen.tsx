@@ -21,7 +21,7 @@ export function GameScreen({
       <div className="pointer-events-none absolute -top-20 -right-20 h-56 w-56 rounded-full bg-candy-sky/30 blur-2xl" />
       <div className="pointer-events-none absolute -bottom-20 -left-14 h-52 w-52 rounded-full bg-candy-yellow/30 blur-2xl" />
       {/* Header */}
-      <header className="relative z-10 mx-3 mt-3 flex items-center justify-between rounded-2xl border-2 border-white/75 bg-candy-cream/85 px-3 py-2 shadow-[0_12px_32px_-18px_#8064ff] backdrop-blur-sm">
+      <header className="relative z-10 mx-3 mt-3 flex items-center justify-between rounded-2xl border-2 border-white/75 bg-candy-cream/85 px-3 py-2 shadow-candy-header backdrop-blur-sm">
         <button
           onClick={onReset}
           className="rounded-xl bg-white px-3 py-1.5 text-sm font-bold text-candy-violet transition-colors hover:bg-candy-violet/10 active:bg-candy-violet/20"
@@ -39,7 +39,7 @@ export function GameScreen({
 
       {/* Bingo indicator */}
       {hasBingo && (
-        <div className="mx-3 animate-[bounce_0.6s_ease-in-out] rounded-2xl border-2 border-candy-mint/80 bg-candy-mint/25 py-2 text-center text-sm font-extrabold text-candy-ink shadow-[0_10px_24px_-18px_#5de4c7]">
+        <div className="mx-3 animate-[bounce_0.6s_ease-in-out] rounded-2xl border-2 border-candy-mint/80 bg-candy-mint/25 py-2 text-center text-sm font-extrabold text-candy-ink shadow-candy-indicator">
           🍭 BINGO! You got a sweet line!
         </div>
       )}

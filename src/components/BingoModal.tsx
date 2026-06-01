@@ -5,7 +5,7 @@ interface BingoModalProps {
 export function BingoModal({ onDismiss }: BingoModalProps) {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-candy-violet/25 p-4 backdrop-blur-[2px]">
-      <div className="w-full max-w-xs animate-[bounce_0.55s_ease-out] rounded-3xl border-4 border-white/90 bg-candy-cream p-6 text-center shadow-[0_30px_60px_-28px_#8064ff]">
+      <div className="w-full max-w-xs animate-[bounce_0.55s_ease-out] rounded-3xl border-4 border-white/90 bg-candy-cream p-6 text-center shadow-candy-modal">
         <div className="mb-4 text-5xl">🍬</div>
         <h2 className="mb-2 font-display text-4xl font-extrabold text-candy-pink">BINGO!</h2>
         <p className="mb-6 font-bold text-candy-ink">You completed a sweet line!</p>
