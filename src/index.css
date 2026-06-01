@@ -6,6 +6,19 @@
   --color-marked: #ffe9ac;
   --color-marked-border: #ff9c32;
   --color-bingo: #ffca48;
+  --color-sticker-title: #8a2e29;
+  --color-sticker-body: #6f4638;
+  --color-sticker-muted: #7d5545;
+  --color-sticker-heading: #6d3a2d;
+  --color-sticker-mark: #6a4f14;
+  --color-sticker-win: #7d3022;
+  --color-sticker-check: #8d5f00;
+  --color-sticker-bingo: #c85e2f;
+  --color-sticker-active: #fff5df;
+  --color-sticker-hover: #ffe8cf;
+  --color-sticker-bingo-bg: #ffe89d;
+  --font-sticker: Marker Felt, Chalkboard SE, Comic Sans MS, Trebuchet MS, sans-serif;
+  --sticker-shadow: 0 10px 0 #d59473, 0 12px 22px rgba(92, 42, 22, 0.25);
 }
 
 html,
@@ -16,18 +29,13 @@ body,
 
 body {
   margin: 0;
-  font-family: 'Marker Felt', 'Chalkboard SE', 'Comic Sans MS', 'Trebuchet MS', sans-serif;
+  font-family: sans-serif;
   -webkit-tap-highlight-color: transparent;
   background:
     radial-gradient(circle at 12% 12%, #fff4ba 0%, rgba(255, 244, 186, 0) 40%),
     radial-gradient(circle at 84% 20%, #ffd6cf 0%, rgba(255, 214, 207, 0) 45%),
     linear-gradient(135deg, #fcefc8 0%, #f8d9c5 45%, #efc9e1 100%);
   color: #4f2b2b;
-}
-
-:root {
-  --sticker-shadow: 0 10px 0 #d59473, 0 12px 22px rgba(92, 42, 22, 0.25);
-  --sticker-pressed-shadow: 0 3px 0 #d59473, 0 6px 10px rgba(92, 42, 22, 0.25);
 }
 
 .sticker-card {
@@ -53,7 +61,7 @@ body {
 }
 
 .sticker-grid {
-  transform: rotate(-1.2deg);
+  transform: none;
 }
 
 .sticker-square {
