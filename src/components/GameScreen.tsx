@@ -30,6 +30,8 @@ export function GameScreen({
 }: GameScreenProps) {
   const minutes = timeRemaining === null ? null : Math.floor(timeRemaining / 60);
   const seconds = timeRemaining === null ? null : String(timeRemaining % 60).padStart(2, '0');
+  const activeTeamLabel = activeTeam === 'spark' ? 'Spark' : 'Pop';
+  const winnerTeamLabel = teamWinner === null ? null : (teamWinner === 'spark' ? 'Spark' : 'Pop');
 
   return (
     <div className="flex flex-col min-h-full bg-gray-50">
@@ -59,7 +61,7 @@ export function GameScreen({
         )}
         {socialMode === 'team' && (
           <p>
-            Mode: Team — Spark {teamScores.spark} · Pop {teamScores.pop} · Next turn: {activeTeam === 'spark' ? 'Spark' : 'Pop'}
+            Mode: Team — Spark {teamScores.spark} · Pop {teamScores.pop} · Next turn: {activeTeamLabel}
           </p>
         )}
       </div>
@@ -67,7 +69,7 @@ export function GameScreen({
       {/* Bingo indicator */}
       {hasBingo && (
         <div className="bg-amber-100 text-amber-800 text-center py-2 font-semibold text-sm">
-          🎉 BINGO! {teamWinner ? `${teamWinner === 'spark' ? 'Spark' : 'Pop'} team got the line!` : 'You got a line!'}
+          🎉 BINGO! {winnerTeamLabel ? `${winnerTeamLabel} team got the line!` : 'You got a line!'}
         </div>
       )}
       {isTimedOut && (
@@ -81,7 +83,7 @@ export function GameScreen({
         <BingoBoard
           board={board}
           winningSquareIds={winningSquareIds}
-          onSquareClick={isTimedOut ? () => undefined : onSquareClick}
+          onSquareClick={onSquareClick}
         />
       </div>
     </div>

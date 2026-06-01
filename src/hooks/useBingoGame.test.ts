@@ -47,6 +47,8 @@ describe('useBingoGame social mechanics', () => {
 
     expect(result.current.gameState).toBe('bingo');
     expect(result.current.teamWinner).toBe('spark');
+    // Team mode alternates turns automatically; row [0..4] produces Spark, Pop, Spark, Pop, Spark.
+    // Spark earns 3 turn points + 3 bingo bonus, Pop earns 2 turn points.
     expect(result.current.teamScores).toEqual({ spark: 6, pop: 2 });
   });
 });

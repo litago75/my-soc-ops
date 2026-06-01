@@ -37,6 +37,8 @@ export interface BingoGameActions {
 const STORAGE_KEY = 'bingo-game-state';
 const STORAGE_VERSION = 2;
 const COUNTDOWN_DURATION_SECONDS = 120;
+const TEAM_TURN_POINT = 1;
+const TEAM_BINGO_BONUS = 3;
 const EMPTY_TEAM_SCORES: TeamScores = { spark: 0, pop: 0 };
 
 interface StoredGameData {
@@ -255,7 +257,6 @@ export function useBingoGame(): BingoGameState & BingoGameActions {
           return null;
         }
         if (current <= 1) {
-          window.clearInterval(interval);
           setGameState((state) => (state === 'playing' ? 'timeout' : state));
           return 0;
         }
@@ -299,7 +300,7 @@ export function useBingoGame(): BingoGameState & BingoGameActions {
       ) {
         setTeamScores((currentScores) => ({
           ...currentScores,
-          [turnTeam]: currentScores[turnTeam] + 1,
+          [turnTeam]: currentScores[turnTeam] + TEAM_TURN_POINT,
         }));
         setActiveTeam(turnTeam === 'spark' ? 'pop' : 'spark');
       }
@@ -312,7 +313,7 @@ export function useBingoGame(): BingoGameState & BingoGameActions {
           if (socialMode === 'team') {
             setTeamScores((currentScores) => ({
               ...currentScores,
-              [turnTeam]: currentScores[turnTeam] + 3,
+              [turnTeam]: currentScores[turnTeam] + TEAM_BINGO_BONUS,
             }));
             setTeamWinner(turnTeam);
           }
