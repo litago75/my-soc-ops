@@ -6,7 +6,7 @@ export const CELEBRATION_VARIANTS: CelebrationVariant[] = [
     emoji: '🎉',
     heading: 'BINGO!',
     message: 'You completed a line!',
-    animationClass: 'animate-[bounce_0.5s_ease-out]',
+    animationClass: 'animate-bounce',
     headingColorClass: 'text-amber-500',
   },
   {
@@ -14,7 +14,7 @@ export const CELEBRATION_VARIANTS: CelebrationVariant[] = [
     emoji: '🌟',
     heading: 'BINGO!',
     message: 'Stellar work!',
-    animationClass: 'animate-[spin_0.6s_ease-out]',
+    animationClass: 'animate-spin',
     headingColorClass: 'text-purple-500',
   },
   {
@@ -22,7 +22,7 @@ export const CELEBRATION_VARIANTS: CelebrationVariant[] = [
     emoji: '🔥',
     heading: 'BINGO!',
     message: "You're on fire!",
-    animationClass: 'animate-[pulse_0.5s_ease-out]',
+    animationClass: 'animate-pulse',
     headingColorClass: 'text-orange-500',
   },
   {
@@ -30,7 +30,7 @@ export const CELEBRATION_VARIANTS: CelebrationVariant[] = [
     emoji: '🚀',
     heading: 'BINGO!',
     message: 'Blasting off!',
-    animationClass: 'animate-[ping_0.5s_ease-out]',
+    animationClass: 'animate-ping',
     headingColorClass: 'text-blue-500',
   },
   {
@@ -38,7 +38,7 @@ export const CELEBRATION_VARIANTS: CelebrationVariant[] = [
     emoji: '🍭',
     heading: 'BINGO!',
     message: 'Sweet victory!',
-    animationClass: 'animate-[bounce_0.4s_ease-out]',
+    animationClass: 'animate-bounce',
     headingColorClass: 'text-pink-500',
   },
 ];
